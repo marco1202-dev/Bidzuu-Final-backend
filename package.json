@@ -10,7 +10,7 @@
     "debug": "tsc-watch --onSuccess \"npm run debug:base\" --onFailure \"echo Compilation Failed\" --noClear",
     "dev": "tsc-watch --onSuccess \"npm run dev:start\" --onFailure \"echo Compilation Failed\" --noClear",
     "dev:start": "npm run bundle-adminjs && node .",
-    "build": "npm run clean && tsc && npm run copy-components && npm run bundle-adminjs",
+    "build": "npm run copy-components && npm run bundle-adminjs",
     "copy-components": "node -e \"const fs=require('fs');const path=require('path');const srcDir=path.join(process.cwd(),'src','admin-panel','components');const distDir=path.join(process.cwd(),'dist','admin-panel','components');if(fs.existsSync(srcDir)){if(!fs.existsSync(distDir)){fs.mkdirSync(distDir,{recursive:true});}const copyDir=(src,dest)=>{if(!fs.existsSync(dest)){fs.mkdirSync(dest,{recursive:true});}const items=fs.readdirSync(src);items.forEach(item=>{const srcPath=path.join(src,item);const destPath=path.join(dest,item);const stat=fs.statSync(srcPath);if(stat.isDirectory()){copyDir(srcPath,destPath);}else if(item.endsWith('.tsx')){fs.copyFileSync(srcPath,destPath);console.log('Copied:',item);}});};copyDir(srcDir,distDir);console.log('Components copied successfully');}else{console.log('Source components directory not found');}\"",
     "clean": "node -e \"const fs=require('fs');const path=require('path');const distPath=path.join(process.cwd(),'dist');if(fs.existsSync(distPath)){fs.rmSync(distPath,{recursive:true,force:true});console.log('dist folder removed');}else{console.log('dist folder does not exist');}\"",
     "bundle-adminjs": "node scripts/bundle-adminjs.js",
