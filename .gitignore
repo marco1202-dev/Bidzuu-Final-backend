@@ -98,7 +98,7 @@ scripts/deploy_hostinger_kevin.sh
 .adminjs/*
 
 
-!vps-publisher/node_modules
-!zip-generator/node_modules
+# vps-publisher/node_modules
+# zip-generator/node_modules
 
 /.env
