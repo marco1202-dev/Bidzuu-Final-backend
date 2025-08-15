@@ -33,18 +33,7 @@ export const config = {
   ALLOW_HEADERS:
     'Authorization, Origin, sentry-trace, X-Requested-With, Content-Type, Accept, X-App-Id, X-App-Secret, X-Access-Token, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Invitation-Token',
   ALLOW_METHODS: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  ALLOW_ORIGIN: [
-    /\.now\.sh$/,
-    /\.dev\.io$/,
-    /\.vercel\.app$/,
-    ...(process.env.APP_ENV !== 'production' ? ['http://localhost:3000'] : []),
-    /\.biddo\.info$/,
-    ...(process.env.WEB_APP_URL
-      ? [process.env.WEB_APP_URL, getDomainExtension(process.env.WEB_APP_URL)]
-      : []),
-    'https://web.biddo.info',
-    'web.biddo.info',
-  ],
+  ALLOW_ORIGIN: true, // Allow all origins
   PAYMENT_AUTH_KEY: process.env.PAYMENT_AUTH_KEY,
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
   OPENAI: {

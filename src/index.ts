@@ -109,11 +109,26 @@ app.use(express.json({ limit: '20mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use(
   cors({
-    methods: config.ALLOW_METHODS,
-    allowedHeaders: config.ALLOW_HEADERS,
-    origin: config.ALLOW_ORIGIN,
+    origin: true, // Allow all origins
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Authorization, Origin, X-Requested-With, Content-Type, Accept, X-App-Id, X-App-Secret, X-Access-Token, Invitation-Token',
+    credentials: true,
+    optionsSuccessStatus: 200,
+    preflightContinue: false,
   })
 )
+
+// Handle preflight requests
+app.options('*', cors())
+
+// Additional CORS headers for broader compatibility
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Authorization, Origin, X-Requested-With, Content-Type, Accept, X-App-Id, X-App-Secret, X-Access-Token, Invitation-Token');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 
 app.use('/account', accountRouter)
 app.use('/auction', auctionRouter)
