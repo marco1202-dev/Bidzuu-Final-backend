@@ -1,24 +1,24 @@
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-function getDomainExtension(url) {
-  try {
-    const { hostname } = new URL(url)
+// function getDomainExtension(url) {
+//   try {
+//     const { hostname } = new URL(url)
 
-    // Split the hostname by dots
-    const parts = hostname.split('.')
+//     // Split the hostname by dots
+//     const parts = hostname.split('.')
 
-    // Handle cases like "www.google.com" and "google.com"
-    if (parts.length > 2) {
-      return parts.slice(-2).join('.')
-    }
+//     // Handle cases like "www.google.com" and "google.com"
+//     if (parts.length > 2) {
+//       return parts.slice(-2).join('.')
+//     }
 
-    return hostname
-  } catch (error) {
-    console.error('Invalid URL:', error)
-    return null
-  }
-}
+//     return hostname
+//   } catch (error) {
+//     console.error('Invalid URL:', error)
+//     return null
+//   }
+// }
 
 export const config = {
   APP_ENV: process.env.APP_ENV,
@@ -28,7 +28,7 @@ export const config = {
   RATE_LIMIT_PER_SECOND: 100,
   IP_RATE_LIMIT_PER_SECOND: 20,
   MAX_ALLOWED_ASSETS: 10,
-  MAX_ASSET_SIZE: 10 * 1024 * 1024, //10MB
+  MAX_ASSET_SIZE: 100 * 1024 * 1024, //100MB (increased for video support)
   WEB_APP_URL: process.env.WEB_APP_URL,
   ALLOW_HEADERS:
     'Authorization, Origin, sentry-trace, X-Requested-With, Content-Type, Accept, X-App-Id, X-App-Secret, X-Access-Token, Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Invitation-Token',
@@ -118,7 +118,7 @@ export const config = {
     // File size limits
     MAX_FILE_SIZE: parseInt(process.env.STORAGE_MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
     // Allowed file types
-    ALLOWED_FILE_TYPES: process.env.STORAGE_ALLOWED_FILE_TYPES?.split(',') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
+    ALLOWED_FILE_TYPES: process.env.STORAGE_ALLOWED_FILE_TYPES?.split(',') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'heic', 'heif', 'heics', 'heifs', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v', '3gp', 'ogv', 'ts', 'mts', 'm2ts', 'vob', 'asf', 'rm', 'rmvb', 'divx', 'xvid', 'h264', 'h265', 'hevc', 'vp8', 'vp9', 'av1'],
     // Image compression settings
     COMPRESS_IMAGES: process.env.STORAGE_COMPRESS_IMAGES !== 'false',
     // Image quality (1-100)

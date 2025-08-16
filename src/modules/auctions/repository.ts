@@ -948,19 +948,37 @@ class AuctionsRepository extends GenericRepository<Auction> {
     transaction: Transaction,
     cleanupBefore = true
   ) {
+    // DEBUG: Log the assets being stored
+    console.log('💾 Repository storeAuctionAssets Debug:', {
+      auctionId,
+      assetsCount: assets?.length || 0,
+      assets: assets?.map(asset => ({
+        originalname: asset.originalname,
+        mimetype: asset.mimetype,
+        size: asset.size,
+        isVideo: asset.mimetype.startsWith('video/')
+      }))
+    })
+
     if (cleanupBefore) {
       await this.removeAuctionAssets(auctionId, transaction)
     }
 
     const storedAssets = [] as Asset[]
     for (const asset of assets) {
+      console.log(`💾 Processing asset: ${asset.originalname} (${asset.mimetype})`)
       const createdAsset = await AssetsRepository.storeAsset(asset, transaction)
       if (createdAsset) {
+        console.log(`✅ Asset stored successfully: ${createdAsset.id}`)
         storedAssets.push(createdAsset)
 
         await AuctionAsset.create({ assetId: createdAsset.id, auctionId }, { transaction })
+      } else {
+        console.error(`❌ Failed to store asset: ${asset.originalname}`)
       }
     }
+
+    console.log(`💾 Total assets stored: ${storedAssets.length}`)
   }
 
   async generateVectorForAuction(auction: Partial<Auction>, transaction: Transaction) {

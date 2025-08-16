@@ -18,9 +18,9 @@ export class AWSStorage implements StorageHandler {
       region,
       credentials: accessKeyId
         ? {
-            accessKeyId,
-            secretAccessKey,
-          }
+          accessKeyId,
+          secretAccessKey,
+        }
         : undefined,
     })
   }

@@ -122,4 +122,6 @@ export const IMAGE_EXTENSIONS = [
   'tga',
   'heic',
   'heif',
+  'heics',
+  'heifs',
 ]

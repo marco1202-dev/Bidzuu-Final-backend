@@ -10,7 +10,7 @@ class AssetsRepository extends GenericRepository<Asset> {
 
   public async storeAsset(asset: Express.Multer.File, transaction?: Transaction) {
     try {
-      console.log(`Starting asset storage for file: ${asset.originalname}, size: ${asset.size}`)
+      console.log(`🚀 AssetsRepository: Starting asset storage for file: ${asset.originalname}, type: ${asset.mimetype}, size: ${asset.size}`)
 
       const resultFile = await AssetStorageHandler.upload(asset)
       if (!resultFile) {
@@ -18,7 +18,7 @@ class AssetsRepository extends GenericRepository<Asset> {
       }
 
       const { filename, size } = resultFile
-      console.log(`File uploaded successfully, filename: ${filename}, size: ${size}`)
+      console.log(`✅ AssetsRepository: File uploaded successfully, filename: ${filename}, size: ${size}`)
 
       const assetData = new Asset({
         path: filename,
@@ -27,11 +27,11 @@ class AssetsRepository extends GenericRepository<Asset> {
       })
 
       const savedAsset = await assetData.save({ transaction })
-      console.log(`Asset saved to database with ID: ${savedAsset.id}`)
+      console.log(`💾 AssetsRepository: Asset saved to database with ID: ${savedAsset.id}`)
 
       return savedAsset
     } catch (error) {
-      console.error(`Failed to store asset: ${error.message}`)
+      console.error(`❌ AssetsRepository: Failed to store asset: ${error.message}`)
       throw error
     }
   }

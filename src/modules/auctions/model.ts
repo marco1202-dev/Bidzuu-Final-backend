@@ -34,6 +34,8 @@ export class Auction extends Model {
 
   declare startingPrice: number
   declare hasCustomStartingPrice: boolean
+  declare reversePrice: number | null
+  declare hasReversePrice: boolean
   declare lastPrice: number
 
   declare vectors: Record<string, number[]>
@@ -156,9 +158,18 @@ function initModel(): void {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-      lastPrice: {
+      reversePrice: {
         type: DataTypes.DOUBLE,
         allowNull: true,
+        defaultValue: null,
+      },
+      hasReversePrice: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      lastPrice: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
       },
       initialPriceInDollars: {
         type: DataTypes.DOUBLE,

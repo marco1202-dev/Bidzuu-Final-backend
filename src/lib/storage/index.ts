@@ -84,28 +84,32 @@ class AssetStorageHandler {
 
   async upload(file: ExpressFile) {
     try {
+      console.log(`🚀 AssetStorageHandler: Starting upload for file: ${file.originalname}, type: ${file.mimetype}, size: ${file.size}`)
+
       const handler = await this.getHandler()
-      console.log(`Using storage handler: ${handler.constructor.name}`)
+      console.log(`✅ AssetStorageHandler: Using storage handler: ${handler.constructor.name}`)
 
       const result = await handler.upload(file)
       if (!result) {
         throw new Error(`Upload failed with ${handler.constructor.name} handler`)
       }
+
+      console.log(`✅ AssetStorageHandler: Upload successful with ${handler.constructor.name}`)
       return result
     } catch (error) {
-      console.error(`Upload failed with primary handler: ${error.message}`)
+      console.error(`❌ AssetStorageHandler: Upload failed with primary handler: ${error.message}`)
 
       // Try fallback to disk storage if primary fails
       try {
-        console.log('Attempting fallback to disk storage...')
+        console.log('🔄 AssetStorageHandler: Attempting fallback to disk storage...')
         const diskHandler = new DiskStorage()
         const result = await diskHandler.upload(file)
         if (result) {
-          console.log('Successfully uploaded to disk storage as fallback')
+          console.log('✅ AssetStorageHandler: Successfully uploaded to disk storage as fallback')
           return result
         }
       } catch (diskError) {
-        console.error('Fallback to disk storage also failed:', diskError.message)
+        console.error('❌ AssetStorageHandler: Fallback to disk storage also failed:', diskError.message)
       }
 
       throw error

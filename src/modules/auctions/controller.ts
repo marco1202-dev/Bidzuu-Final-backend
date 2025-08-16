@@ -27,6 +27,8 @@ export class AuctionsController {
       description,
       hasCustomStartingPrice = false,
       price,
+      reversePrice,
+      hasReversePrice = false,
       mainCategoryId,
       subCategoryId,
       startAt,
@@ -55,6 +57,18 @@ export class AuctionsController {
       }
 
       const files = req.files as Express.Multer.File[]
+
+      // DEBUG: Log the files received
+      console.log('🚀 Backend Create Auction Debug - Files:', {
+        filesCount: files?.length || 0,
+        files: files?.map(file => ({
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          isVideo: file.mimetype.startsWith('video/')
+        }))
+      })
+
       const [latitude, longitude] = JSON.parse(latLng)
 
       const initialPriceInDollars = await CurrenciesRepository.getPriceInDollars(
@@ -74,21 +88,21 @@ export class AuctionsController {
         subCategoryId,
         startAt: startAt
           ? new Date(
-              typeof startAt === 'string'
-                ? startAt.startsWith('"')
-                  ? startAt.slice(1, -1)
-                  : startAt
+            typeof startAt === 'string'
+              ? startAt.startsWith('"')
+                ? startAt.slice(1, -1)
                 : startAt
-            )
+              : startAt
+          )
           : undefined,
         expiresAt: expiresAt
           ? new Date(
-              typeof expiresAt === 'string'
-                ? expiresAt.startsWith('"')
-                  ? expiresAt.slice(1, -1)
-                  : expiresAt
+            typeof expiresAt === 'string'
+              ? expiresAt.startsWith('"')
+                ? expiresAt.slice(1, -1)
                 : expiresAt
-            )
+              : expiresAt
+          )
           : undefined,
         hasCustomStartingPrice,
         locationLat: latitude,
@@ -96,6 +110,8 @@ export class AuctionsController {
         startingPrice: price,
         lastPrice: price,
         isNewItem: condition === 'new',
+        reversePrice,
+        hasReversePrice,
       }
 
       const auction = await AuctionsRepository.createWithDetails(account.id, newAuction, files)
@@ -203,6 +219,8 @@ export class AuctionsController {
       startAt,
       expiresAt,
       condition,
+      reversePrice,
+      hasReversePrice = false,
     } = req.body
 
     try {
@@ -237,10 +255,23 @@ export class AuctionsController {
         typeof req.body?.assetsToKeep === 'string' && req.body.assetsToKeep === ''
           ? []
           : typeof req.body?.assetsToKeep === 'string' && req.body?.assetsToKeep?.indexOf('[') === 0
-          ? JSON.parse(req.body.assetsToKeep)
-          : req.body.assetsToKeep
+            ? JSON.parse(req.body.assetsToKeep)
+            : req.body.assetsToKeep
 
       const files = req.files as Express.Multer.File[]
+
+      // DEBUG: Log the files received for update
+      console.log('🚀 Backend Update Auction Debug - Files:', {
+        auctionId,
+        filesCount: files?.length || 0,
+        files: files?.map(file => ({
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          isVideo: file.mimetype.startsWith('video/')
+        }))
+      })
+
       const [latitude, longitude] = JSON.parse(latLng)
 
       let initialPriceInDollars
@@ -262,21 +293,21 @@ export class AuctionsController {
         youtubeLink,
         startAt: startAt
           ? new Date(
-              typeof startAt === 'string'
-                ? startAt.startsWith('"')
-                  ? startAt.slice(1, -1)
-                  : startAt
+            typeof startAt === 'string'
+              ? startAt.startsWith('"')
+                ? startAt.slice(1, -1)
                 : startAt
-            )
+              : startAt
+          )
           : undefined,
         expiresAt: expiresAt
           ? new Date(
-              typeof expiresAt === 'string'
-                ? expiresAt.startsWith('"')
-                  ? expiresAt.slice(1, -1)
-                  : expiresAt
+            typeof expiresAt === 'string'
+              ? expiresAt.startsWith('"')
+                ? expiresAt.slice(1, -1)
                 : expiresAt
-            )
+              : expiresAt
+          )
           : undefined,
         hasCustomStartingPrice,
         locationLat: latitude,
@@ -284,6 +315,8 @@ export class AuctionsController {
         startingPrice: price,
         lastPrice: price,
         isNewItem: condition === 'new',
+        reversePrice,
+        hasReversePrice,
         ...(initialCurrencyId && { initialCurrencyId }),
         ...(initialPriceInDollars && { initialPriceInDollars }),
       }
