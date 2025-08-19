@@ -3,7 +3,6 @@ import { DATABASE_MODELS } from '../../constants/model-names.js'
 import { DatabaseConnection } from '../../database/index.js'
 import { GenericRepository } from '../../lib/base-repository.js'
 import { PaginatedQueryParams } from '../../types.js'
-import { generateAnonymousEmail } from '../../utils/generic.js'
 import { Account } from './model.js'
 import { Review } from '../reviews/model.js'
 import { Follower } from '../followers/model.js'
@@ -17,6 +16,7 @@ import { Auction } from '../auctions/model.js'
 import { AuctionsRepository } from '../auctions/repository.js'
 import { Bid } from '../bids/model.js'
 import { BidRepository } from '../bids/repository.js'
+import { Offer } from '../offers/model.js'
 import { AssetsRepository } from '../assets/repository.js'
 import { Asset } from '../assets/model.js'
 import { LastSeenAuction } from '../last-seen/model.js'
@@ -32,26 +32,185 @@ class AccountsRepository extends GenericRepository<Account> {
   }
 
   public async getOneWithDetails(accountId: string) {
-    return await Account.findByPk(accountId, {
-      attributes: ['id', 'name', 'email', 'picture', 'verified'],
+    const account = await Account.findByPk(accountId, {
+      attributes: ['id', 'name', 'email', 'picture', 'verified', 'meta'],
       include: [
         { model: Asset, as: 'asset' },
         {
           model: Review,
-          as: 'receivedReviews',
-          order: [['createdAt', 'DESC']],
-          limit: 2,
-          include: [
-            {
-              model: Account,
-              as: 'reviewer',
-              attributes: ['id', 'name', 'email', 'picture', 'verified'],
-              include: [{ model: Asset, as: 'asset' }],
-            },
-          ],
+          as: 'reviewer',
+          attributes: ['id', 'name', 'email', 'picture', 'verified'],
+          include: [{ model: Asset, as: 'asset' }],
         },
       ],
     })
+
+    // Ensure the account has complete profile images
+    if (account) {
+      await this.ensureCompleteProfileImages(account)
+    }
+
+    return account
+  }
+
+  /**
+   * Ensures every user has a valid default picture
+   * @param currentPicture - Current picture URL or null
+   * @param email - User's email address
+   * @param name - User's name
+   * @returns Valid picture URL
+   */
+
+  /**
+   * Generates a complete profile image setup for a user
+   * @param email - User's email address
+   * @param name - User's name
+   * @param existingPicture - Existing picture URL or null
+   * @returns Object with picture and profile image URLs
+   */
+  private generateProfileImages(email?: string, name?: string, existingPicture?: string | null) {
+    const identifier = email || name || 'user'
+    const encodedIdentifier = encodeURIComponent(identifier)
+
+    // Primary profile picture (from icotar.com for consistency)
+    const primaryPicture = existingPicture && existingPicture.trim() !== ''
+      ? existingPicture
+      : `https://icotar.com/avatar/${encodedIdentifier}.png`
+
+    // Additional profile image variations for different use cases
+    const profileImages = {
+      picture: primaryPicture,
+      avatar: `https://icotar.com/avatar/${encodedIdentifier}.png`,
+      thumbnail: `https://icotar.com/avatar/${encodedIdentifier}.png?size=100`,
+      large: `https://icotar.com/avatar/${encodedIdentifier}.png?size=400`,
+      // Fallback to UI Avatars if icotar.com fails
+      fallback: `https://ui-avatars.com/api/?background=random&color=fff&size=200&name=${encodedIdentifier}`,
+      // Gravatar as another fallback option
+      gravatar: email ? `https://www.gravatar.com/avatar/${this.generateMD5(email)}?d=identicon&s=200` : null
+    }
+
+    return profileImages
+  }
+
+  /**
+   * Simple MD5 hash generation for Gravatar (fallback)
+   * @param str - String to hash
+   * @returns MD5 hash
+   */
+  private generateMD5(str: string): string {
+    // Simple hash function for Gravatar fallback
+    let hash = 0
+    if (str.length === 0) return hash.toString()
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+
+    return Math.abs(hash).toString(16)
+  }
+
+  /**
+   * Ensures every user has a complete profile image setup
+   * @param account - Account object
+   * @returns Account with enhanced profile images
+   */
+  private async ensureCompleteProfileImages(account: Account): Promise<Account> {
+    if (!account.picture || account.picture.trim() === '') {
+      const profileImages = this.generateProfileImages(account.email, account.name)
+
+      // Update the account with the primary picture
+      try {
+        await Account.update(
+          {
+            picture: profileImages.picture,
+            // Store additional profile image data in meta field if available
+            meta: {
+              ...account.meta,
+              profileImages: profileImages
+            }
+          },
+          { where: { id: account.id } }
+        )
+
+        // Update the account object
+        account.picture = profileImages.picture
+        if (account.meta) {
+          account.meta.profileImages = profileImages
+        }
+
+        console.log(`✅ Assigned complete profile images to user ${account.email || account.name || account.id}`)
+      } catch (error) {
+        console.warn(`Could not update profile images for user ${account.id}:`, error.message)
+      }
+    }
+
+    return account
+  }
+
+  /**
+   * Bulk update all accounts without pictures to ensure every user has a complete profile image setup
+   * This method can be run as a maintenance task or during system initialization
+   */
+  public async ensureAllAccountsHavePictures() {
+    try {
+      console.log('🔍 Finding accounts without complete profile images...')
+
+      // Find all accounts without pictures
+      const accountsWithoutPictures = await Account.findAll({
+        where: {
+          [Op.or]: [
+            { picture: null },
+            { picture: '' },
+            { picture: { [Op.like]: '%undefined%' } }
+          ]
+        },
+        attributes: ['id', 'email', 'name', 'picture', 'meta']
+      })
+
+      console.log(`📊 Found ${accountsWithoutPictures.length} accounts without complete profile images`)
+
+      if (accountsWithoutPictures.length === 0) {
+        console.log('✅ All accounts already have complete profile images!')
+        return
+      }
+
+      // Update each account with a complete profile image setup
+      let updatedCount = 0
+      for (const account of accountsWithoutPictures) {
+        try {
+          const profileImages = this.generateProfileImages(account.email, account.name, account.picture)
+
+          await Account.update(
+            {
+              picture: profileImages.picture,
+              meta: {
+                ...account.meta,
+                profileImages: profileImages
+              }
+            },
+            { where: { id: account.id } }
+          )
+
+          updatedCount++
+          console.log(`✅ Updated profile images for account ${account.email || account.name || account.id}`)
+          console.log(`   📸 Primary: ${profileImages.picture}`)
+          console.log(`   🖼️  Thumbnail: ${profileImages.thumbnail}`)
+          console.log(`   🖼️  Large: ${profileImages.large}`)
+          console.log(`   🔄 Fallback: ${profileImages.fallback}`)
+        } catch (error) {
+          console.error(`❌ Failed to update profile images for account ${account.id}:`, error.message)
+        }
+      }
+
+      console.log(`🎉 Successfully updated ${updatedCount} out of ${accountsWithoutPictures.length} accounts`)
+      console.log('💡 All users now have complete profile image setups with multiple variations and fallbacks')
+
+    } catch (error) {
+      console.error('❌ Error during bulk profile image update:', error)
+      throw error
+    }
   }
 
   public async findOneOrCreate(
@@ -74,41 +233,34 @@ class AccountsRepository extends GenericRepository<Account> {
       return result
     }
 
-    const settings = await SettingsRepository.get()
-
-    // Generate a unique email that doesn't conflict with existing ones
-    let accountEmail = accountData.email ?? generateAnonymousEmail()
-    let attempts = 0
-    const maxAttempts = 10
-
-    while (attempts < maxAttempts) {
-      try {
-        const existingAccount = await Account.findOne({
-          where: { email: accountEmail }
-        })
-
-        if (!existingAccount) {
-          // Email is unique, we can use it
-          break
-        }
-
-        // Generate a new email with a timestamp to ensure uniqueness
-        accountEmail = `${generateAnonymousEmail().split('@')[0]}_${Date.now()}@biddo.app`
-        attempts++
-      } catch (error) {
-        console.error('Error checking email uniqueness:', error)
-        // Fallback to timestamp-based email
-        accountEmail = `user_${Date.now()}@biddo.app`
-        break
-      }
+    // For OAuth sign-ins, require a valid email to prevent fake account creation
+    if (!accountData.email || accountData.email.trim() === '') {
+      throw new Error('Email is required for OAuth account creation. Cannot create account without valid email.')
     }
 
+    // Validate that the email is not a fake generated email
+    if (accountData.email.includes('@biddo.app') && accountData.email.includes('_')) {
+      throw new Error('Invalid email format. Cannot create account with generated email.')
+    }
+
+    const settings = await SettingsRepository.get()
+
+    // Use the provided email directly instead of generating fake ones
+    const accountEmail = accountData.email
+
     try {
+      // Ensure every user gets a complete profile image setup automatically
+      const profileImages = this.generateProfileImages(accountEmail, accountData.name, accountData.picture)
+
       const newAccount = await Account.create({
         ...accountData,
         email: accountEmail,
-        isAnonymous: !accountData.email,
-        picture: `https://icotar.com/avatar/${accountEmail}.png`,
+        isAnonymous: false, // OAuth users are not anonymous
+        picture: profileImages.picture,
+        meta: {
+          ...accountData.meta,
+          profileImages: profileImages
+        },
         lastTriviaDataResetAt: new Date(),
         selectedCurrencyId: settings?.defaultCurrencyId,
         phone,
@@ -125,20 +277,9 @@ class AccountsRepository extends GenericRepository<Account> {
       })
     } catch (error) {
       if (error.name === 'SequelizeUniqueConstraintError') {
-        // If we still get a unique constraint error, try one more time with a timestamp
-        const fallbackEmail = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}@biddo.app`
-
-        const newAccount = await Account.create({
-          ...accountData,
-          email: fallbackEmail,
-          isAnonymous: !accountData.email,
-          picture: `https://icotar.com/avatar/${fallbackEmail}.png`,
-          lastTriviaDataResetAt: new Date(),
-          selectedCurrencyId: settings?.defaultCurrencyId,
-          phone,
-        })
-
-        return await Account.findByPk(newAccount.id, {
+        // If email already exists, try to find the existing account
+        const existingAccount = await Account.findOne({
+          where: { email: accountEmail },
           include: [
             {
               model: Asset,
@@ -146,6 +287,18 @@ class AccountsRepository extends GenericRepository<Account> {
             },
           ],
         })
+
+        if (existingAccount) {
+          // Update the existing account with the new authId if it doesn't have one
+          if (!existingAccount.authId) {
+            await Account.update(
+              { authId },
+              { where: { id: existingAccount.id } }
+            )
+            existingAccount.authId = authId
+          }
+          return existingAccount
+        }
       }
 
       throw error
@@ -162,11 +315,16 @@ class AccountsRepository extends GenericRepository<Account> {
         where: { accountId },
         attributes: ['id', 'acceptedBidId', 'expiresAt'],
       }),
+      Offer.findAll({
+        where: { offererId: accountId },
+        attributes: ['id'],
+      }),
     ]
 
     const result = await Promise.all<unknown>(promises)
     const bids = result[0] as Bid[]
     const auctions = result[1] as Auction[]
+    const offers = result[2] as Offer[]
 
     const acceptedBids = bids.filter((bid) => bid.isAccepted)
     const rejectedBids = bids.filter((bid) => bid.isRejected)
@@ -180,6 +338,7 @@ class AccountsRepository extends GenericRepository<Account> {
     return {
       auctions: auctions.length,
       bids: bids.length,
+      offers: offers.length,
       acceptedBids: acceptedBids.length,
       rejectedBids: rejectedBids.length,
       activeAuctions: activeAuctions.length,
@@ -209,6 +368,14 @@ class AccountsRepository extends GenericRepository<Account> {
       if (el.email) {
         const [localPart] = (el.email ?? '').split('@')
         el.email = `${localPart}@${'*'.repeat(7)}`
+      }
+
+      // Ensure every account has complete profile images
+      if (!el.picture || el.picture.trim() === '') {
+        const profileImages = this.generateProfileImages(el.email, el.name, el.picture)
+        el.picture = profileImages.picture
+        // Add profile image variations to the result
+        el.profileImages = profileImages
       }
 
       if (el.path) {

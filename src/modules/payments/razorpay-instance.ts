@@ -99,6 +99,41 @@ class RazorpayInstance {
       createdAt: new Date(),
     })
   }
+
+  async createAuctionOrder(accountId: string, auctionId: string, amount: number, currencyId: string) {
+    const razorpay = await this.getRazorpay()
+    if (!razorpay) {
+      console.error('Razorpay instance is not initialized')
+      throw new Error('Razorpay instance is not initialized')
+    }
+
+    try {
+      const currency = await Currency.findByPk(currencyId)
+      if (!currency) {
+        throw new Error('Currency not found')
+      }
+
+      const integerAmount = Math.floor(amount)
+
+      const order = await razorpay.orders.create({
+        amount: integerAmount * 100,
+        currency: currency.code,
+        receipt: `auction_order_rcptid_${Date.now()}`,
+        payment_capture: true,
+        notes: {
+          accountId,
+          auctionId,
+          amount: amount.toString(),
+          currencyId,
+        },
+      })
+
+      return order.id
+    } catch (error) {
+      console.error(error)
+      throw new Error('Failed to create Razorpay auction order')
+    }
+  }
 }
 
 const razorpayInstance = new RazorpayInstance()

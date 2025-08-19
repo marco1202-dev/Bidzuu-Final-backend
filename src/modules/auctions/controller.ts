@@ -20,7 +20,7 @@ import { CurrenciesRepository } from '../currencies/repository.js'
 export class AuctionsController {
   public static async create(req: Request, res: Response) {
     const { account } = res.locals
-    const {
+    let {
       latLng,
       location,
       title,
@@ -29,6 +29,8 @@ export class AuctionsController {
       price,
       reversePrice,
       hasReversePrice = false,
+      allowOffers = true,
+      auctionFormat = 'auction',
       mainCategoryId,
       subCategoryId,
       startAt,
@@ -112,6 +114,8 @@ export class AuctionsController {
         isNewItem: condition === 'new',
         reversePrice,
         hasReversePrice,
+        allowOffers,
+        auctionFormat,
       }
 
       const auction = await AuctionsRepository.createWithDetails(account.id, newAuction, files)
@@ -123,9 +127,7 @@ export class AuctionsController {
       return res.status(200).json(auction)
     } catch (error) {
       console.error('Cannot create auction', error)
-      if (error.message === GENERAL.NOT_ENOUGH_COINS) {
-        return res.status(400).send({ error: GENERAL.NOT_ENOUGH_COINS })
-      }
+      // Auction creation is free now; do not map errors to NOT_ENOUGH_COINS
       res.status(500).send({ error: GENERAL.SOMETHING_WENT_WRONG })
     }
   }
@@ -221,6 +223,8 @@ export class AuctionsController {
       condition,
       reversePrice,
       hasReversePrice = false,
+      allowOffers = true,
+      auctionFormat = 'auction',
     } = req.body
 
     try {
@@ -317,6 +321,8 @@ export class AuctionsController {
         isNewItem: condition === 'new',
         reversePrice,
         hasReversePrice,
+        allowOffers,
+        auctionFormat,
         ...(initialCurrencyId && { initialCurrencyId }),
         ...(initialPriceInDollars && { initialPriceInDollars }),
       }

@@ -59,6 +59,45 @@ class StripeInstance {
       },
     })
   }
+
+  async createAuctionPaymentSession(accountId: string, auctionId: string, amount: number, currencyId: string) {
+    const currency = await Currency.findByPk(currencyId)
+    if (!currency) {
+      throw new Error('Currency not found')
+    }
+
+    const integerAmount = Math.floor(amount)
+
+    const settings = await SettingsRepository.get()
+    const webAppUrl = settings?.webAppUrl || config.WEB_APP_URL
+
+    const stripe = await this.getStripe()
+    return await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: currency.code || 'usd',
+            product_data: {
+              name: `Auction Purchase`,
+              description: 'Buy It Now auction purchase',
+            },
+            unit_amount: integerAmount * 100,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${webAppUrl}/auction/${auctionId}/success`,
+      cancel_url: `${webAppUrl}/auction/${auctionId}`,
+      metadata: {
+        accountId,
+        auctionId,
+        amount: amount.toString(),
+        currencyId,
+      },
+    })
+  }
 }
 
 const stripeInstance = new StripeInstance()

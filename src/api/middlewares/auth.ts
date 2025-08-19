@@ -24,6 +24,17 @@ export class Authenticator {
 
         const accessToken = req.headers.authorization
         const userData = await Authenticator.getUserData(accessToken)
+
+        // Validate that OAuth users have required data
+        if (!userData.email || userData.email.trim() === '') {
+          console.error('OAuth authentication failed: Missing email from user data', {
+            authId: userData.authId,
+            name: userData.name,
+            identities: userData.identities
+          })
+          return next() // Continue without authentication for optional auth
+        }
+
         const account = await AccountsRepository.findOneOrCreate(
           userData.authId,
           userData,
@@ -41,6 +52,8 @@ export class Authenticator {
         res.locals.account = accountData
         next()
       } catch (error) {
+        // For optional authentication, just continue without setting account
+        console.warn('Optional authentication failed:', error.message)
         return next()
       }
     }
@@ -55,6 +68,19 @@ export class Authenticator {
 
         const accessToken = req.headers.authorization
         const userData = await Authenticator.getUserData(accessToken)
+
+        // Validate that OAuth users have required data
+        if (!userData.email || userData.email.trim() === '') {
+          console.error('OAuth authentication failed: Missing email from user data', {
+            authId: userData.authId,
+            name: userData.name,
+            identities: userData.identities
+          })
+          return res.status(400).send({
+            error: 'OAuth authentication failed: Email is required. Please ensure your Google account has an email address and try again.'
+          })
+        }
+
         const account = await AccountsRepository.findOneOrCreate(
           userData.authId,
           userData,
@@ -80,6 +106,22 @@ export class Authenticator {
           return res
             .status(GENERAL.TOKEN_EXPIRED.code)
             .send({ error: GENERAL.TOKEN_EXPIRED.message })
+        }
+
+        // Handle missing email errors specifically
+        if (error.message && error.message.includes('Email is required')) {
+          console.error('OAuth authentication failed: Missing email', error.message)
+          return res.status(400).send({
+            error: 'OAuth authentication failed: Email is required. Please ensure your Google account has an email address and try again.'
+          })
+        }
+
+        // Handle invalid email format errors
+        if (error.message && error.message.includes('Invalid email format')) {
+          console.error('OAuth authentication failed: Invalid email format', error.message)
+          return res.status(400).send({
+            error: 'OAuth authentication failed: Invalid email format. Please try signing in with a different method.'
+          })
         }
 
         // Handle Sequelize unique constraint errors specifically

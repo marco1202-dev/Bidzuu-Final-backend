@@ -13,6 +13,8 @@ notificationRouter.get(
   NotificationsController.getUnreadNotificationsCount
 )
 
+notificationRouter.post('/offer', NotificationsController.createOfferNotification)
+
 notificationRouter.put('/:notificationId', NotificationsController.markAsRead)
 notificationRouter.put('/', NotificationsController.markAllAsRead)
 

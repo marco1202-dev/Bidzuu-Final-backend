@@ -10,6 +10,8 @@ import { PaypalInstance } from './paypal-instance.js'
 import { RazorpayInstance } from './razorpay-instance.js'
 import crypto from 'crypto'
 import { SettingsRepository } from '../settings/repository.js'
+import { MilestoneRepository } from '../milestones/repository.js'
+import { Auction } from '../auctions/model.js'
 
 export class PaymentsController {
   public static async createPaymentSession(req: Request, res: Response) {
@@ -166,20 +168,40 @@ export class PaymentsController {
     try {
       switch (event.type) {
         case 'checkout.session.completed':
-          const { accountId, productId, currencyId } = data.object.metadata
-          if (!accountId || !productId || !currencyId) {
-            console.error(`[SUBSCRIPTION]: Cannot get accountId or productId from stripe event`)
+          const { accountId, productId, currencyId, auctionId, amount } = data.object.metadata
+
+          if (auctionId && amount) {
+            // This is an auction payment - create a milestone
+            const auction = await Auction.findByPk(auctionId)
+            if (!auction) {
+              console.error(`[AUCTION]: Auction not found: ${auctionId}`)
+              return res.sendStatus(400)
+            }
+
+            await MilestoneRepository.createMilestone({
+              auctionId,
+              buyerId: accountId,
+              sellerId: auction.accountId,
+              amount: parseFloat(amount),
+              currencyId,
+              paymentTransactionId: data.object.id,
+              paymentMethod: 'stripe',
+              description: `Payment for auction: ${auction.title}`,
+            })
+          } else if (accountId && productId && currencyId) {
+            // This is a coin package payment
+            await PaymentsRepository.handleProviderPayment({
+              accountId,
+              productId,
+              currencyId,
+              transactionId: data.object.id,
+              paidAmount: data.object.amount_total / 100,
+              createdAt: new Date(data.object.created * 1000),
+            })
+          } else {
+            console.error(`[SUBSCRIPTION]: Cannot get required metadata from stripe event`)
             return res.sendStatus(400)
           }
-
-          await PaymentsRepository.handleProviderPayment({
-            accountId,
-            productId,
-            currencyId,
-            transactionId: data.object.id,
-            paidAmount: data.object.amount_total / 100,
-            createdAt: new Date(data.object.created * 1000),
-          })
 
           break
         default:
@@ -212,6 +234,59 @@ export class PaymentsController {
       }
 
       return res.status(200).json({ success: true })
+    } catch (error) {
+      console.error(error)
+      res.status(500).send({ error: GENERAL.SOMETHING_WENT_WRONG })
+    }
+  }
+
+  // Auction-specific payment methods
+  public static async createAuctionPaymentSession(req: Request, res: Response) {
+    const { account } = res.locals
+    try {
+      const { auctionId, amount, currencyId } = req.body
+
+      const paymentIntent = await StripeInstance.createAuctionPaymentSession(
+        account.id,
+        auctionId,
+        amount,
+        currencyId
+      )
+      return res.status(200).json(paymentIntent)
+    } catch (error) {
+      console.error(error)
+      res.status(500).send({ error: GENERAL.SOMETHING_WENT_WRONG })
+    }
+  }
+
+  public static async createPaypalAuctionPaymentSession(req: Request, res: Response) {
+    const { account } = res.locals
+    try {
+      const { auctionId, amount, currencyId } = req.body
+      const approvalUrl = await PaypalInstance.createAuctionPaymentSession(
+        account.id,
+        auctionId,
+        amount,
+        currencyId
+      )
+      return res.status(200).json(approvalUrl)
+    } catch (error) {
+      console.error(error)
+      res.status(500).send({ error: GENERAL.SOMETHING_WENT_WRONG })
+    }
+  }
+
+  public static async createRazorpayAuctionOrder(req: Request, res: Response) {
+    const { account } = res.locals
+    try {
+      const { auctionId, amount, currencyId } = req.body
+      const orderId = await RazorpayInstance.createAuctionOrder(
+        account.id,
+        auctionId,
+        amount,
+        currencyId
+      )
+      return res.status(200).json({ orderId })
     } catch (error) {
       console.error(error)
       res.status(500).send({ error: GENERAL.SOMETHING_WENT_WRONG })

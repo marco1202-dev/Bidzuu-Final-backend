@@ -43,7 +43,11 @@ import { userMessageRouter } from './api/routes/user-message.js'
 import { exchangeRatesRouter } from './api/routes/exchange-rates.js'
 import { currenciesRouter } from './api/routes/currencies.js'
 import { webPaymentProductsRouter } from './api/routes/web-payment-products.js'
+import { offersRouter } from './api/routes/offers.js'
 import { aiRouter } from './api/routes/ai.js'
+import { ocrRouter } from './api/routes/ocr.js'
+import verificationRequestsRouter from './api/routes/verification-requests.js'
+import { milestonesRouter } from './api/routes/milestones.js'
 import { OpenAIService } from './lib/openai-service.js'
 
 const app = express()
@@ -155,7 +159,11 @@ app.use('/user-message', userMessageRouter)
 app.use('/exchange-rate', exchangeRatesRouter)
 app.use('/currency', currenciesRouter)
 app.use('/web-payment-product', webPaymentProductsRouter)
+app.use('/offers', offersRouter)
 app.use('/ai', aiRouter)
+app.use('/ocr', ocrRouter)
+app.use('/verification-requests', verificationRequestsRouter)
+app.use('/milestones', milestonesRouter)
 
 WebSubscriptions.init(app)
 

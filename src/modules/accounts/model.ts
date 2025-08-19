@@ -207,6 +207,7 @@ function initModel(): void {
           NEW_AUCTION_FROM_FOLLOWING: true,
           AUCTION_ADDED_TO_FAVOURITES: true,
           FAVOURITE_AUCTION_PRICE_CHANGE: true,
+          NEW_OFFER_ON_AUCTION: true,
         },
       },
       verified: {

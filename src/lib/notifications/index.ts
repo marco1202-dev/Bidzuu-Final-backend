@@ -22,6 +22,7 @@ import { AccountWasVerifiedNotification } from './items/account-verified.js'
 import { NewCommentOnAuctionNotification } from './items/new-comment.js'
 import { NewCommentReplyNotification } from './items/new-comment-reply.js'
 import { CommentOnSameAuctionNotification } from './items/comment-on-same-auction.js'
+import { NewOfferOnAuctionNotification } from './items/new-offer.js'
 
 class FCMNotificationService {
   sendAuctionAddedToFavourites = AuctionAddedToFavouritesNotification.send
@@ -44,6 +45,152 @@ class FCMNotificationService {
   sendNewCommentOnAuction = NewCommentOnAuctionNotification.send
   sendCommentReply = NewCommentReplyNotification.send
   sendCommentOnSameAuction = CommentOnSameAuctionNotification.send
+  sendNewOfferOnAuction = NewOfferOnAuctionNotification.send
+
+  // Offer notification methods for offer status changes
+  sendOfferAccepted = async (offer: any) => {
+    try {
+      const account = await Account.findByPk(offer.offererId)
+      if (!account || !account.deviceFCMToken) {
+        return false
+      }
+
+      const notification = new Notification({
+        accountId: account.id,
+        type: NotificationTypes.SYSTEM,
+        title: { en: 'Offer Accepted!', fr: 'Offre acceptée !' },
+        description: {
+          en: `Your offer of ${offer.amount} has been accepted!`,
+          fr: `Votre offre de ${offer.amount} a été acceptée !`
+        },
+        entityId: offer.auctionId,
+      })
+
+      await notification.save()
+
+      const language = (account.meta.appLanguage || 'en') as string
+      await admin.messaging().send({
+        token: account.deviceFCMToken,
+        notification: {
+          title: notification.title[language] ?? notification.title['en'],
+          body: notification.description[language] ?? notification.description['en'],
+        },
+        data: {
+          notificationId: notification.id,
+          type: NotificationTypes.SYSTEM,
+          accountId: account.id,
+          offerId: offer.id,
+          auctionId: offer.auctionId,
+        },
+        android: {
+          notification: {
+            color: '#D94F30',
+          },
+        },
+      })
+
+      return true
+    } catch (error) {
+      console.error('Could not send offer accepted notification:', error)
+      return false
+    }
+  }
+
+  sendOfferRejected = async (offer: any) => {
+    try {
+      const account = await Account.findByPk(offer.offererId)
+      if (!account || !account.deviceFCMToken) {
+        return false
+      }
+
+      const notification = new Notification({
+        accountId: account.id,
+        type: NotificationTypes.SYSTEM,
+        title: { en: 'Offer Rejected', fr: 'Offre rejetée' },
+        description: {
+          en: `Your offer of ${offer.amount} has been rejected`,
+          fr: `Votre offre de ${offer.amount} a été rejetée`
+        },
+        entityId: offer.auctionId,
+      })
+
+      await notification.save()
+
+      const language = (account.meta.appLanguage || 'en') as string
+      await admin.messaging().send({
+        token: account.deviceFCMToken,
+        notification: {
+          title: notification.title[language] ?? notification.title['en'],
+          body: notification.description[language] ?? notification.description['en'],
+        },
+        data: {
+          notificationId: notification.id,
+          type: NotificationTypes.SYSTEM,
+          accountId: account.id,
+          offerId: offer.id,
+          auctionId: offer.auctionId,
+        },
+        android: {
+          notification: {
+            color: '#D94F30',
+          },
+        },
+      })
+
+      return true
+    } catch (error) {
+      console.error('Could not send offer rejected notification:', error)
+      return false
+    }
+  }
+
+  sendOfferCountered = async (offer: any) => {
+    try {
+      const account = await Account.findByPk(offer.offererId)
+      if (!account || !account.deviceFCMToken) {
+        return false
+      }
+
+      const notification = new Notification({
+        accountId: account.id,
+        type: NotificationTypes.SYSTEM,
+        title: { en: 'Counter Offer Received', fr: 'Contre-offre reçue' },
+        description: {
+          en: `You received a counter offer of ${offer.counterOfferAmount}`,
+          fr: `Vous avez reçu une contre-offre de ${offer.counterOfferAmount}`
+        },
+        entityId: offer.auctionId,
+      })
+
+      await notification.save()
+
+      const language = (account.meta.appLanguage || 'en') as string
+      await admin.messaging().send({
+        token: account.deviceFCMToken,
+        notification: {
+          title: notification.title[language] ?? notification.title['en'],
+          body: notification.description[language] ?? notification.description['en'],
+        },
+        data: {
+          notificationId: notification.id,
+          type: NotificationTypes.SYSTEM,
+          accountId: account.id,
+          offerId: offer.id,
+          auctionId: offer.auctionId,
+        },
+        android: {
+          notification: {
+            color: '#D94F30',
+          },
+        },
+      })
+
+      return true
+    } catch (error) {
+      console.error('Could not send offer countered notification:', error)
+      return false
+    }
+  }
 
   sendSystemNotification = async (
     accountIds: string[],
@@ -99,7 +246,7 @@ class FCMNotificationService {
         })
 
         sentNotifications += 1
-      } catch (error) {}
+      } catch (error) { }
     }
 
     return sentNotifications

@@ -283,6 +283,26 @@ const NOTIFICATIONS = {
       ja: '別のユーザーから新しいレビューを受け取りました',
     },
   },
+  [NotificationTypes.NEW_OFFER_ON_AUCTION]: {
+    title: {
+      en: '💰 New offer received',
+      ro: '💰 Ofertă nouă primită',
+      fr: '💰 Nouvelle offre reçue',
+      de: '💰 Neues Angebot erhalten',
+      it: '💰 Nuova offerta ricevuta',
+      es: '💰 Nueva oferta recibida',
+      ja: '💰 新しいオファーを受信',
+    },
+    description: {
+      en: 'You received a new offer on your auction',
+      ro: 'Ai primit o nouă ofertă la licitația ta',
+      fr: 'Vous avez reçu une nouvelle offre sur votre enchère',
+      de: 'Sie haben ein neues Angebot für Ihre Auktion erhalten',
+      it: 'Hai ricevuto una nuova offerta per la tua asta',
+      es: 'Has recibido una nueva oferta en tu subasta',
+      ja: 'あなたのオークションに新しいオファーを受け取りました',
+    },
+  },
 }
 
 export async function up({

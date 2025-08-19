@@ -32,4 +32,7 @@ export const DATABASE_MODELS = {
   WEB_PAYMENT_PRODUCTS: 'web_payment_products',
   TRANSLATIONS_CACHE: 'translation_caches',
   AI_RESPONSES: 'ai_responses',
+  OFFERS: 'offers',
+  VERIFICATION_REQUESTS: 'verification_requests',
+  MILESTONES: 'milestones',
 }

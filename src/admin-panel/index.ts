@@ -25,6 +25,8 @@ import { createUserMessageResource } from './resources/user-messages.js'
 import { createCurrenciesResource } from './resources/currencies.js'
 import { createExchangeRatesResource } from './resources/exchange-rates.js'
 import { createWebPaymentProductResource } from './resources/web-payment-products.js'
+import { createOfferResource } from './resources/offer.js'
+import { createVerificationRequestsResource } from './resources/verification-requests.js'
 
 const DEFAULT_ADMIN = {
   email: config.ADMIN.ADMIN_EMAIL,
@@ -68,7 +70,7 @@ class AdminPanel {
       branding: {
         companyName: 'BidZuu',
         withMadeWithLove: false,
-        logo: 'assets/logo.png',
+        logo: 'https://res.cloudinary.com/dqdgw6i5a/image/upload/v1755419439/logo_skodgy.png',
         favicon: 'https://cdn.tanna.app/biddo/logo.png',
       },
       assets: {
@@ -116,6 +118,8 @@ class AdminPanel {
         createPaymentResource(),
         createUserMessageResource(),
         createWebPaymentProductResource(),
+        createOfferResource(),
+        createVerificationRequestsResource(),
       ],
     })
 

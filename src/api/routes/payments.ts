@@ -48,4 +48,26 @@ paymentsRouter.post(
 
 paymentsRouter.post('/razorpay-webhook', PaymentsController.handleRazorpayWebhook)
 
+// Auction-specific payment routes
+paymentsRouter.post(
+  '/stripe-auction-session',
+  await Authenticator.authenticateHttp(),
+  HttpRateLimiter.limitRequestsForUser,
+  PaymentsController.createAuctionPaymentSession
+)
+
+paymentsRouter.post(
+  '/paypal-auction-session',
+  await Authenticator.authenticateHttp(),
+  HttpRateLimiter.limitRequestsForUser,
+  PaymentsController.createPaypalAuctionPaymentSession
+)
+
+paymentsRouter.post(
+  '/razorpay-auction-order',
+  await Authenticator.authenticateHttp(),
+  HttpRateLimiter.limitRequestsForUser,
+  PaymentsController.createRazorpayAuctionOrder
+)
+
 export { paymentsRouter }

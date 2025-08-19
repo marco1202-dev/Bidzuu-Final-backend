@@ -33,6 +33,9 @@ import { ExchangeRate } from '../modules/exchange-rates/model.js'
 import { WebPaymentProduct } from '../modules/web-payment-products/model.js'
 import { TranslationCache } from '../modules/auxiliary-models/translations-cache.js'
 import { AiResponse } from '../modules/auxiliary-models/ai-responses.js'
+import { Offer } from '../modules/offers/model.js'
+import { VerificationRequest } from '../modules/verification-requests/model.js'
+import { Milestone } from '../modules/milestones/model.js'
 let sequalizee
 
 export const DatabaseConnection = {
@@ -91,6 +94,9 @@ export const DatabaseConnection = {
       WebPaymentProduct,
       TranslationCache,
       AiResponse,
+      Offer,
+      VerificationRequest,
+      Milestone,
     ]
     models.forEach((model) => model.initModel())
     models.forEach((model) => model.initAssociations())

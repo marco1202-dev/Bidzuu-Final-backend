@@ -31,12 +31,16 @@ export class Auction extends Model {
 
   declare acceptedBidId: string | null
   declare acceptedBidAt: Date
+  declare acceptedOfferId: string | null
+  declare acceptedOfferAt: Date | null
 
   declare startingPrice: number
   declare hasCustomStartingPrice: boolean
   declare reversePrice: number | null
   declare hasReversePrice: boolean
   declare lastPrice: number
+  declare allowOffers: boolean
+  declare auctionFormat: string
 
   declare vectors: Record<string, number[]>
 
@@ -150,6 +154,18 @@ function initModel(): void {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      acceptedOfferId: {
+        type: DataTypes.UUID,
+        references: {
+          model: DATABASE_MODELS.OFFERS,
+          key: 'id',
+        },
+        allowNull: true,
+      },
+      acceptedOfferAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       startingPrice: {
         type: DataTypes.DOUBLE,
         allowNull: false,
@@ -170,6 +186,15 @@ function initModel(): void {
       lastPrice: {
         type: DataTypes.DOUBLE,
         allowNull: false,
+      },
+      allowOffers: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+      auctionFormat: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'auction',
       },
       initialPriceInDollars: {
         type: DataTypes.DOUBLE,

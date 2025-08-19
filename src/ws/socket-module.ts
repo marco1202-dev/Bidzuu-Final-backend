@@ -29,6 +29,10 @@ export enum WebsocketEvents {
   AUCTION_FROM_FAVOURITES_STARTED = 'auctionFromFavouritesStarted',
   ACCOUNT_VERIFIED = 'accountVerified',
   NEW_EXCHANGE_RATE = 'newExchangeRate',
+  OFFER_RECEIVED = 'offerReceived',
+  OFFER_ACCEPTED = 'offerAccepted',
+  OFFER_REJECTED = 'offerRejected',
+  OFFER_COUNTERED = 'offerCountered',
 }
 
 export class WebSocketModule {

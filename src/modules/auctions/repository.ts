@@ -21,7 +21,6 @@ import { AuctionSimilarity } from '../auction-similarities/model.js'
 import { Literal } from 'sequelize/types/utils.js'
 import { SettingsRepository } from '../settings/repository.js'
 import { AuctionSimilarityRepository } from '../auction-similarities/repository.js'
-import { GENERAL } from '../../constants/errors.js'
 import { CoinsRefunder } from '../../lib/coins-refunder.js'
 import { ChatGroupAuction } from '../auction-similarities/chat-group-auctions.js'
 import {
@@ -110,28 +109,10 @@ class AuctionsRepository extends GenericRepository<Auction> {
     return await DatabaseConnection.getInstance().transaction(async (transaction: Transaction) => {
       const { locationPretty } = auction
 
-      // We need to check if the account has enough coins to create the auction
-      const [settings, auctionsFromSameAccount] = await Promise.all([
+      // Allow free auction creation: no coin checks, no free limit
+      const [settings] = await Promise.all([
         SettingsRepository.get(),
-        Auction.count({
-          where: { accountId: auction.accountId },
-          transaction,
-        }),
       ])
-
-      const { freeAuctionsCount, auctionsCoinsCost } = settings
-
-      if (auctionsFromSameAccount >= freeAuctionsCount) {
-        const account = await Account.findByPk(accountId, { transaction })
-        if (account.coins < auctionsCoinsCost) {
-          throw new Error(GENERAL.NOT_ENOUGH_COINS)
-        }
-
-        account.coins -= auctionsCoinsCost
-        await account.save({ transaction })
-
-        auction.paidCoins = auctionsCoinsCost
-      }
 
       // If the location does not exist inside the database,
       // we are going to create it
@@ -808,7 +789,9 @@ class AuctionsRepository extends GenericRepository<Auction> {
 
     const QUERY_WHERE_STMT = query
       ? {
-        [Op.or]: [literal(`"title" ILIKE $1`)],
+        where: {
+          [Op.or]: [literal(`"title" ILIKE $1`)],
+        },
       }
       : {}
 
@@ -862,7 +845,9 @@ class AuctionsRepository extends GenericRepository<Auction> {
 
     const QUERY_WHERE_STMT = query
       ? {
-        [Op.or]: [literal(`"title" ILIKE $1`)],
+        where: {
+          [Op.or]: [literal(`"title" ILIKE $1`)],
+        },
       }
       : {}
 
