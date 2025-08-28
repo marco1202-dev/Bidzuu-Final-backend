@@ -7,16 +7,18 @@
     "skipLibCheck": true,
     "removeComments": true,
     "declaration": false,
-    "jsx": "preserve",                // Preserve JSX syntax in output
+    "jsx": "preserve", // Preserve JSX syntax in output
     "moduleResolution": "node",
-    "lib": ["ES2020"],
-    "outDir": "dist",                 // Output directory for compiled files
+    "lib": [
+      "ES2020"
+    ],
+    "outDir": "dist", // Output directory for compiled files
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "esModuleInterop": true,
     "noUnusedLocals": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,                  // Allow JavaScript files to be compiled
+    "allowJs": true, // Allow JavaScript files to be compiled
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true
   },

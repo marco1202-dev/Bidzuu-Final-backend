@@ -1,6 +1,9 @@
 import { GenericRepository } from '../../lib/base-repository.js'
 import { Milestone } from './model.js'
 import { Transaction } from 'sequelize'
+import { Account } from '../accounts/model.js'
+import { Auction } from '../auctions/model.js'
+import { Currency } from '../currencies/model.js'
 
 class MilestoneRepository extends GenericRepository<Milestone> {
   constructor() {
@@ -31,9 +34,9 @@ class MilestoneRepository extends GenericRepository<Milestone> {
     return await Milestone.findOne({
       where: { auctionId },
       include: [
-        { model: Milestone.sequelize.models.Account, as: 'buyer' },
-        { model: Milestone.sequelize.models.Account, as: 'seller' },
-        { model: Milestone.sequelize.models.Currency, as: 'currency' },
+        { model: Account, as: 'buyer' },
+        { model: Account, as: 'seller' },
+        { model: Currency, as: 'currency' },
       ],
     })
   }
@@ -42,8 +45,8 @@ class MilestoneRepository extends GenericRepository<Milestone> {
     return await Milestone.findAll({
       where: { buyerId },
       include: [
-        { model: Milestone.sequelize.models.Auction, as: 'auction' },
-        { model: Milestone.sequelize.models.Currency, as: 'currency' },
+        { model: Auction, as: 'auction' },
+        { model: Currency, as: 'currency' },
       ],
       order: [['createdAt', 'DESC']],
     })
@@ -53,8 +56,7 @@ class MilestoneRepository extends GenericRepository<Milestone> {
     return await Milestone.findAll({
       where: { sellerId },
       include: [
-        { model: Milestone.sequelize.models.Auction, as: 'auction' },
-        { model: Milestone.sequelize.models.Currency, as: 'currency' },
+        { model: Auction, as: 'auction' },
       ],
       order: [['createdAt', 'DESC']],
     })
@@ -115,10 +117,10 @@ class MilestoneRepository extends GenericRepository<Milestone> {
     return await Milestone.findAll({
       where: { status: 'pending' },
       include: [
-        { model: Milestone.sequelize.models.Auction, as: 'auction' },
-        { model: Milestone.sequelize.models.Account, as: 'buyer' },
-        { model: Milestone.sequelize.models.Account, as: 'seller' },
-        { model: Milestone.sequelize.models.Currency, as: 'currency' },
+        { model: Auction, as: 'auction' },
+        { model: Account, as: 'buyer' },
+        { model: Account, as: 'seller' },
+        { model: Currency, as: 'currency' },
       ],
       order: [['createdAt', 'ASC']],
     })
@@ -128,10 +130,10 @@ class MilestoneRepository extends GenericRepository<Milestone> {
     return await Milestone.findAll({
       where: { status: 'confirmed' },
       include: [
-        { model: Milestone.sequelize.models.Auction, as: 'auction' },
-        { model: Milestone.sequelize.models.Account, as: 'buyer' },
-        { model: Milestone.sequelize.models.Account, as: 'seller' },
-        { model: Milestone.sequelize.models.Currency, as: 'currency' },
+        { model: Auction, as: 'auction' },
+        { model: Account, as: 'buyer' },
+        { model: Account, as: 'seller' },
+        { model: Currency, as: 'currency' },
       ],
       order: [['confirmedAt', 'ASC']],
     })
