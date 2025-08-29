@@ -37,6 +37,7 @@ export class AuctionsController {
       expiresAt,
       condition,
       youtubeLink,
+      imageUrls,
     } = req.body
     let { initialCurrencyId } = req.body
 
@@ -69,6 +70,21 @@ export class AuctionsController {
           size: file.size,
           isVideo: file.mimetype.startsWith('video/')
         }))
+      })
+
+      // Parse imageUrls - handle both array and comma-separated string
+      let parsedImageUrls: string[] = []
+      if (imageUrls) {
+        if (Array.isArray(imageUrls)) {
+          parsedImageUrls = imageUrls
+        } else if (typeof imageUrls === 'string' && imageUrls.trim()) {
+          parsedImageUrls = imageUrls.split(',').map(url => url.trim()).filter(url => url.length > 0)
+        }
+      }
+
+      console.log('🚀 Backend Create Auction Debug - Parsed Image URLs:', {
+        parsedImageUrlsCount: parsedImageUrls.length,
+        parsedImageUrls: parsedImageUrls
       })
 
       const [latitude, longitude] = JSON.parse(latLng)
@@ -118,7 +134,7 @@ export class AuctionsController {
         auctionFormat,
       }
 
-      const auction = await AuctionsRepository.createWithDetails(account.id, newAuction, files)
+      const auction = await AuctionsRepository.createWithDetails(account.id, newAuction, files, parsedImageUrls)
 
       FCMNotificationService.sendNewAuctionFromFollowingAccount(account, auction.id)
 

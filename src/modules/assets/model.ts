@@ -7,6 +7,8 @@ export class Asset extends Model {
   declare path: string
   declare size: number
   declare initialName: string | null
+  declare imageUrl: string | null
+  declare assetType: 'uploaded' | 'url'
 
   declare readonly createdAt: Date
   declare readonly updatedAt: Date
@@ -35,6 +37,15 @@ function initModel(): void {
       initialName: {
         type: DataTypes.STRING,
         allowNull: true,
+      },
+      imageUrl: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+      assetType: {
+        type: DataTypes.ENUM('uploaded', 'url'),
+        defaultValue: 'uploaded',
+        allowNull: false,
       },
       createdAt: {
         allowNull: false,

@@ -1,5 +1,5 @@
 import { DatabaseConnection } from '../../database/index.js'
-import { AssetsRepository } from '../../modules/assets/repository.js'
+import AssetsRepository from '../../modules/assets/repository.js'
 import { Category } from '../../modules/categories/model.js'
 import { CategoriesRepository } from '../../modules/categories/repository.js'
 import { customComponents } from '../component-loader.js'

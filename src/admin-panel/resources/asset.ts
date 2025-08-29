@@ -1,7 +1,7 @@
 import { DatabaseConnection } from '../../database/index.js'
 import { Account } from '../../modules/accounts/model.js'
 import { Asset } from '../../modules/assets/model.js'
-import { AssetsRepository } from '../../modules/assets/repository.js'
+import AssetsRepository from '../../modules/assets/repository.js'
 import { AuctionAsset } from '../../modules/auxiliary-models/auction-assets.js'
 import { customComponents } from '../component-loader.js'
 import { Op } from 'sequelize'
@@ -210,7 +210,7 @@ const createAssetAction = async (request, response) => {
 
   try {
     console.log('Admin panel: Starting asset upload...')
-    
+
     const file = (await uploadFile(expressReq, response)) as Express.Multer.File
     console.log(`Admin panel: File received - ${file.originalname}, size: ${file.size}`)
 
@@ -222,13 +222,13 @@ const createAssetAction = async (request, response) => {
 
     console.log('Admin panel: Storing asset...')
     const result = await AssetsRepository.storeAsset(file)
-    
+
     if (!result) {
       throw new Error('Asset storage returned null')
     }
 
     console.log(`Admin panel: Asset stored successfully with ID: ${result.id}`)
-    
+
     return {
       redirectUrl: '/admin/resources/assets',
       notice: {
@@ -238,12 +238,12 @@ const createAssetAction = async (request, response) => {
     }
   } catch (error) {
     console.error('Admin panel: Asset upload failed:', error)
-    
+
     let errorMessage = 'File upload failed'
     if (error.message) {
       errorMessage += `: ${error.message}`
     }
-    
+
     return {
       notice: { message: errorMessage, type: 'error' },
     }

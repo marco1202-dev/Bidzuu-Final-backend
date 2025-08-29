@@ -21,5 +21,10 @@ export const auctionValidation = {
     initialCurrencyId: Joi.string().optional().allow(null, ''),
     assetsToKeep: Joi.string().optional().allow(null, ''),
     files: Joi.any(),
+    imageUrls: Joi.alternatives().try(
+      Joi.array().items(Joi.string().uri()),
+      Joi.string().uri(),
+      Joi.string().allow('', null)
+    ).optional().allow(null),
   }),
 }

@@ -10,7 +10,7 @@ import { Location } from '../auxiliary-models/location.js'
 import { config } from '../../config.js'
 import { Account } from '../accounts/model.js'
 import { BidRepository } from '../bids/repository.js'
-import { AssetsRepository } from '../assets/repository.js'
+import AssetsRepository from '../assets/repository.js'
 import { Review } from '../reviews/model.js'
 import { PaginatedQueryParams } from '../../types.js'
 import { DATABASE_MODELS } from '../../constants/model-names.js'
@@ -104,7 +104,8 @@ class AuctionsRepository extends GenericRepository<Auction> {
   public async createWithDetails(
     accountId: string,
     auction: Partial<Auction>,
-    assets: Express.Multer.File[] = []
+    assets: Express.Multer.File[] = [],
+    imageUrls: string[] = []
   ) {
     return await DatabaseConnection.getInstance().transaction(async (transaction: Transaction) => {
       const { locationPretty } = auction
@@ -143,7 +144,7 @@ class AuctionsRepository extends GenericRepository<Auction> {
         returning: true,
       })
 
-      await this.storeAuctionAssets(assets, createdAuction.id, transaction)
+      await this.storeAuctionAssets(assets, createdAuction.id, transaction, true, imageUrls)
 
       // Set the expiration date
       const auctionActiveTimeInHours =
@@ -931,18 +932,21 @@ class AuctionsRepository extends GenericRepository<Auction> {
     assets: Express.Multer.File[],
     auctionId: string,
     transaction: Transaction,
-    cleanupBefore = true
+    cleanupBefore = true,
+    imageUrls: string[] = []
   ) {
     // DEBUG: Log the assets being stored
     console.log('💾 Repository storeAuctionAssets Debug:', {
       auctionId,
       assetsCount: assets?.length || 0,
+      imageUrlsCount: imageUrls?.length || 0,
       assets: assets?.map(asset => ({
         originalname: asset.originalname,
         mimetype: asset.mimetype,
         size: asset.size,
         isVideo: asset.mimetype.startsWith('video/')
-      }))
+      })),
+      imageUrls: imageUrls
     })
 
     if (cleanupBefore) {
@@ -950,16 +954,38 @@ class AuctionsRepository extends GenericRepository<Auction> {
     }
 
     const storedAssets = [] as Asset[]
+    
+    // Process uploaded files
     for (const asset of assets) {
-      console.log(`💾 Processing asset: ${asset.originalname} (${asset.mimetype})`)
+      console.log(`💾 Processing uploaded asset: ${asset.originalname} (${asset.mimetype})`)
       const createdAsset = await AssetsRepository.storeAsset(asset, transaction)
       if (createdAsset) {
-        console.log(`✅ Asset stored successfully: ${createdAsset.id}`)
+        console.log(`✅ Uploaded asset stored successfully: ${createdAsset.id}`)
         storedAssets.push(createdAsset)
 
         await AuctionAsset.create({ assetId: createdAsset.id, auctionId }, { transaction })
       } else {
-        console.error(`❌ Failed to store asset: ${asset.originalname}`)
+        console.error(`❌ Failed to store uploaded asset: ${asset.originalname}`)
+      }
+    }
+
+    // Process image URLs
+    for (const imageUrl of imageUrls) {
+      if (imageUrl && imageUrl.trim()) {
+        console.log(`💾 Processing image URL: ${imageUrl}`)
+        try {
+          const createdAsset = await AssetsRepository.storeAssetFromUrl(imageUrl.trim(), transaction)
+          if (createdAsset) {
+            console.log(`✅ URL asset stored successfully: ${createdAsset.id}`)
+            storedAssets.push(createdAsset)
+
+            await AuctionAsset.create({ assetId: createdAsset.id, auctionId }, { transaction })
+          } else {
+            console.error(`❌ Failed to store URL asset: ${imageUrl}`)
+          }
+        } catch (error) {
+          console.error(`❌ Error processing image URL ${imageUrl}:`, error)
+        }
       }
     }
 

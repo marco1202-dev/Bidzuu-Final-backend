@@ -4,7 +4,7 @@ import { AuctionsRepository } from '../../modules/auctions/repository.js'
 import { CategoriesRepository } from '../../modules/categories/repository.js'
 import { DEFAULT_AUCTIONS_DATA, DefaultAuctionData, IMAGES_STORAGE_PREFIX } from './constants.js'
 import { Asset } from '../../modules/assets/model.js'
-import { AssetsRepository } from '../../modules/assets/repository.js'
+import AssetsRepository from '../../modules/assets/repository.js'
 import { Transaction } from 'sequelize'
 import { DatabaseConnection } from '../../database/index.js'
 import { Location } from '../../modules/auxiliary-models/location.js'
@@ -166,9 +166,9 @@ const createAuction = async (
     vectors: {},
     ...(needToStartInTheFuture
       ? {
-          startAt: useThreeDaysAfter ? threeDaysAfter : twoDaysAfter,
-          expiresAt: useThreeDaysAfter ? sixDaysAfter : fiveDaysAfter,
-        }
+        startAt: useThreeDaysAfter ? threeDaysAfter : twoDaysAfter,
+        expiresAt: useThreeDaysAfter ? sixDaysAfter : fiveDaysAfter,
+      }
       : {}),
   }
 
